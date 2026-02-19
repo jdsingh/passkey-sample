@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Passkeys Sample</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔐 Passkeys Sample</h1>
+      <p class="subtitle">Experiment with WebAuthn configuration options</p>
+    </header>
+
+    <nav class="nav-buttons">
+      <a href="signup.html" class="btn btn-primary">Create Passkey (Sign Up)</a>
+      <a href="login.html" class="btn btn-secondary">Login with Passkey</a>
+    </nav>
+
+    <section class="info-section">
+      <h2>About This Sample</h2>
+      <p>This application demonstrates passkey registration and authentication using <a href="https://simplewebauthn.dev/" target="_blank">SimpleWebAuthn</a>.</p>
+      <p>On the <strong>Sign Up</strong> page, you can configure various WebAuthn parameters to see how they affect the passkey creation process.</p>
+      
+      <h3>Configurable Options</h3>
+      <ul>
+        <li><strong>Attestation Type</strong> - Controls whether the authenticator provides proof of its identity</li>
+        <li><strong>User Verification</strong> - Whether biometric/PIN verification is required</li>
+        <li><strong>Resident Key</strong> - Controls discoverable credential creation</li>
+        <li><strong>Authenticator Attachment</strong> - Platform (built-in) vs Cross-platform (security key)</li>
+        <li><strong>Timeout</strong> - How long the user has to complete the operation</li>
+        <li><strong>Supported Algorithms</strong> - Which cryptographic algorithms to accept</li>
+        <li><strong>Preferred Authenticator Type</strong> - Hint for which authenticator type to use</li>
+      </ul>
+    </section>
+
+    <section class="users-section">
+      <h2>Registered Users</h2>
+      <div id="users-list">Loading...</div>
+      <button id="refresh-users" class="btn btn-small">Refresh</button>
+    </section>
+  </div>
+
+  <script>
+    async function loadUsers() {
+      try {
+        const response = await fetch('/api/users');
+        const users = await response.json();
+        const usersList = document.getElementById('users-list');
+        
+        if (users.length === 0) {
+          usersList.innerHTML = '<p class="muted">No users registered yet.</p>';
+        } else {
+          usersList.innerHTML = users.map(user => `
+            <div class="user-card">
+              <strong>${user.username}</strong>
+              <span class="badge">${user.passkeysCount} passkey(s)</span>
+              <div class="passkeys-list">
+                ${user.passkeys.map(pk => `
+                  <div class="passkey-item">
+                    <span class="credential-id">${pk.id}</span>
+                    <span class="device-type">${pk.deviceType || 'unknown'}</span>
+                    ${pk.backedUp ? '<span class="backed-up">☁️ Synced</span>' : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (error) {
+        document.getElementById('users-list').innerHTML = `<p class="error">Error loading users: ${error.message}</p>`;
+      }
+    }
+
+    document.getElementById('refresh-users').addEventListener('click', loadUsers);
+    loadUsers();
+  </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Passkeys Sample</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔐 Login with Passkey</h1>
+      <p class="subtitle">Authenticate using your registered passkey</p>
+      <a href="index.html" class="back-link">← Back to Home</a>
+    </header>
+
+    <form id="login-form">
+      <!-- User Info (Optional) -->
+      <section class="form-section">
+        <h2>User Information (Optional)</h2>
+        <div class="form-group">
+          <label for="username">Username / Email</label>
+          <input type="text" id="username" name="username" placeholder="user@example.com">
+          <p class="hint">
+            Leave empty for <strong>discoverable credential</strong> flow (the authenticator will show available passkeys).<br>
+            Enter a username to limit authentication to that user's passkeys.
+          </p>
+        </div>
+      </section>
+
+      <!-- Authentication Options -->
+      <section class="form-section">
+        <h2>Authentication Options</h2>
+        
+        <div class="form-group">
+          <label for="userVerification">User Verification</label>
+          <select id="userVerification" name="userVerification">
+            <option value="discouraged">discouraged - Skip if possible</option>
+            <option value="preferred" selected>preferred - Use if available (default)</option>
+            <option value="required">required - Must verify user</option>
+          </select>
+          <p class="hint">
+            Controls whether the authenticator should verify the user during authentication.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label for="timeout">Timeout (milliseconds)</label>
+          <input type="number" id="timeout" name="timeout" value="60000" min="15000" max="300000" step="1000">
+          <p class="hint">How long the user has to complete the authentication</p>
+        </div>
+      </section>
+
+      <!-- Submit -->
+      <section class="form-section">
+        <button type="submit" class="btn btn-primary btn-large" id="submit-btn">
+          Login with Passkey
+        </button>
+      </section>
+    </form>
+
+    <!-- Results -->
+    <section id="results" class="results-section" style="display: none;">
+      <h2>Results</h2>
+      <div id="result-message"></div>
+      <details>
+        <summary>Authentication Options (sent to authenticator)</summary>
+        <pre id="auth-options"></pre>
+      </details>
+      <details>
+        <summary>Authentication Response (from authenticator)</summary>
+        <pre id="auth-response"></pre>
+      </details>
+      <details>
+        <summary>Verification Result (from server)</summary>
+        <pre id="verification-result"></pre>
+      </details>
+    </section>
+  </div>
+
+  <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

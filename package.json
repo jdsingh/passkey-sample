@@ -1,0 +1,16 @@
+{
+  "name": "passkeys-sample",
+  "version": "1.0.0",
+  "description": "Passkeys sample app using SimpleWebAuthn with configurable parameters",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@simplewebauthn/server": "^13.2.2",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1"
+  }
+}

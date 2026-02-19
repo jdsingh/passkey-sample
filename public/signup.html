@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - Passkeys Sample</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔐 Create Passkey</h1>
+      <p class="subtitle">Configure WebAuthn options and create a passkey</p>
+      <a href="index.html" class="back-link">← Back to Home</a>
+    </header>
+
+    <form id="signup-form">
+      <!-- User Info -->
+      <section class="form-section">
+        <h2>User Information</h2>
+        <div class="form-group">
+          <label for="username">Username / Email</label>
+          <input type="text" id="username" name="username" required placeholder="user@example.com">
+          <p class="hint">This will be used as both userName and userDisplayName</p>
+        </div>
+      </section>
+
+      <!-- Relying Party Configuration -->
+      <section class="form-section">
+        <h2>Relying Party (RP) Configuration</h2>
+        <div class="form-group">
+          <label for="rpName">RP Name</label>
+          <input type="text" id="rpName" name="rpName" value="Passkeys Sample">
+          <p class="hint">Human-readable name shown to users during registration</p>
+        </div>
+        <div class="form-group">
+          <label for="rpID">RP ID</label>
+          <input type="text" id="rpID" name="rpID" value="localhost">
+          <p class="hint">Domain name (must match the current origin). Changing this will likely cause errors.</p>
+        </div>
+      </section>
+
+      <!-- Attestation -->
+      <section class="form-section">
+        <h2>Attestation</h2>
+        <div class="form-group">
+          <label for="attestationType">Attestation Type</label>
+          <select id="attestationType" name="attestationType">
+            <option value="none" selected>none - No attestation (recommended)</option>
+            <option value="direct">direct - Attestation data from authenticator</option>
+          </select>
+          <p class="hint">
+            <strong>none:</strong> Don't request attestation. Simpler and more privacy-preserving.<br>
+            <strong>direct:</strong> Request attestation statement. Used to verify authenticator origin.
+          </p>
+        </div>
+      </section>
+
+      <!-- Authenticator Selection -->
+      <section class="form-section">
+        <h2>Authenticator Selection</h2>
+        
+        <div class="form-group">
+          <label for="userVerification">User Verification</label>
+          <select id="userVerification" name="userVerification">
+            <option value="discouraged">discouraged - Skip if possible</option>
+            <option value="preferred" selected>preferred - Use if available (default)</option>
+            <option value="required">required - Must verify user</option>
+          </select>
+          <p class="hint">
+            Controls whether the authenticator should verify the user (e.g., via biometrics or PIN).<br>
+            <strong>discouraged:</strong> Skip verification if possible (faster but less secure).<br>
+            <strong>preferred:</strong> Verify if the authenticator supports it.<br>
+            <strong>required:</strong> Fail if verification is not possible.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label for="residentKey">Resident Key (Discoverable Credential)</label>
+          <select id="residentKey" name="residentKey">
+            <option value="discouraged">discouraged - Don't create discoverable credential</option>
+            <option value="preferred" selected>preferred - Create if possible (default)</option>
+            <option value="required">required - Must be discoverable</option>
+          </select>
+          <p class="hint">
+            Controls whether the credential is "discoverable" (can be used without providing credential ID).<br>
+            <strong>discouraged:</strong> Create a server-side credential (requires server to provide credential ID).<br>
+            <strong>preferred:</strong> Create discoverable if authenticator supports it.<br>
+            <strong>required:</strong> Fail if discoverable credentials aren't supported.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label for="authenticatorAttachment">Authenticator Attachment</label>
+          <select id="authenticatorAttachment" name="authenticatorAttachment">
+            <option value="any" selected>any - No preference</option>
+            <option value="platform">platform - Built-in (Touch ID, Face ID, Windows Hello)</option>
+            <option value="cross-platform">cross-platform - External (Security keys, phones via QR)</option>
+          </select>
+          <p class="hint">
+            <strong>platform:</strong> Use device's built-in authenticator (Touch ID, Face ID, Windows Hello).<br>
+            <strong>cross-platform:</strong> Use external authenticator (USB security key, phone via QR code).<br>
+            <strong>any:</strong> Let the user choose.
+          </p>
+        </div>
+      </section>
+
+      <!-- Preferred Authenticator Type (Hints) -->
+      <section class="form-section">
+        <h2>Authenticator Hints</h2>
+        <div class="form-group">
+          <label for="preferredAuthenticatorType">Preferred Authenticator Type</label>
+          <select id="preferredAuthenticatorType" name="preferredAuthenticatorType">
+            <option value="none" selected>none - No hint</option>
+            <option value="securityKey">securityKey - Physical security key</option>
+            <option value="localDevice">localDevice - This device's authenticator</option>
+            <option value="remoteDevice">remoteDevice - Another device (QR code flow)</option>
+          </select>
+          <p class="hint">
+            Provides a hint to the browser about which type of authenticator the user might want to use.<br>
+            This influences the UI but doesn't strictly enforce the choice.
+          </p>
+        </div>
+      </section>
+
+      <!-- Timeout -->
+      <section class="form-section">
+        <h2>Timeout</h2>
+        <div class="form-group">
+          <label for="timeout">Timeout (milliseconds)</label>
+          <input type="number" id="timeout" name="timeout" value="60000" min="15000" max="300000" step="1000">
+          <p class="hint">How long the user has to complete the registration (15-300 seconds). Default: 60000ms (60 seconds)</p>
+        </div>
+      </section>
+
+      <!-- Algorithms -->
+      <section class="form-section">
+        <h2>Supported Algorithms</h2>
+        <div class="form-group">
+          <label>Select which cryptographic algorithms to accept:</label>
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" name="algorithms" value="-8" checked>
+              <span>Ed25519 (-8) - EdDSA</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="algorithms" value="-7" checked>
+              <span>ES256 (-7) - ECDSA with SHA-256 (most common)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="algorithms" value="-257" checked>
+              <span>RS256 (-257) - RSASSA-PKCS1-v1_5 with SHA-256</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="algorithms" value="-36">
+              <span>ES512 (-36) - ECDSA with SHA-512</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="algorithms" value="-37">
+              <span>PS256 (-37) - RSASSA-PSS with SHA-256</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="algorithms" value="-38">
+              <span>PS384 (-38) - RSASSA-PSS with SHA-384</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="algorithms" value="-39">
+              <span>PS512 (-39) - RSASSA-PSS with SHA-512</span>
+            </label>
+          </div>
+          <p class="hint">
+            The authenticator will use one of these algorithms to sign. ES256 (-7) and RS256 (-257) have the widest support.
+          </p>
+        </div>
+      </section>
+
+      <!-- Submit -->
+      <section class="form-section">
+        <button type="submit" class="btn btn-primary btn-large" id="submit-btn">
+          Create Passkey
+        </button>
+      </section>
+    </form>
+
+    <!-- Results -->
+    <section id="results" class="results-section" style="display: none;">
+      <h2>Results</h2>
+      <div id="result-message"></div>
+      <details>
+        <summary>Registration Options (sent to authenticator)</summary>
+        <pre id="registration-options"></pre>
+      </details>
+      <details>
+        <summary>Registration Response (from authenticator)</summary>
+        <pre id="registration-response"></pre>
+      </details>
+      <details>
+        <summary>Verification Result (from server)</summary>
+        <pre id="verification-result"></pre>
+      </details>
+    </section>
+  </div>
+
+  <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
