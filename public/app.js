@@ -73,7 +73,7 @@ if (signupForm) {
         throw new Error(error.error || 'Failed to get registration options');
       }
 
-      const options = await optionsResponse.json();
+      const { challengeId, ...options } = await optionsResponse.json();
       showResults('registration-options', options);
 
       // Step 2: Start registration with authenticator
@@ -95,7 +95,7 @@ if (signupForm) {
       const verificationResponse = await fetch('/api/verify-registration', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ response: registrationResponse }),
+        body: JSON.stringify({ response: registrationResponse, challengeId }),
       });
 
       if (!verificationResponse.ok) {
@@ -158,7 +158,7 @@ if (loginForm) {
         throw new Error(error.error || 'Failed to get authentication options');
       }
 
-      const options = await optionsResponse.json();
+      const { challengeId, ...options } = await optionsResponse.json();
       showResults('auth-options', options);
 
       // Step 2: Start authentication with authenticator
@@ -178,7 +178,7 @@ if (loginForm) {
       const verificationResponse = await fetch('/api/verify-authentication', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ response: authResponse }),
+        body: JSON.stringify({ response: authResponse, challengeId }),
       });
 
       if (!verificationResponse.ok) {

@@ -1,5 +1,5 @@
 import express from 'express';
-import session from 'express-session';
+import { randomUUID } from 'crypto';
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -20,41 +20,31 @@ const app = express();
 
 app.use(express.json());
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'passkeys-sample-secret-change-in-production',
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-      // Firebase Hosting terminates TLS before forwarding to Functions over HTTP,
-      // so req.secure is false inside the function. Use NODE_ENV to set secure flag.
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-    },
-  })
-);
-
 // RP configuration — set via environment variables for production
 const rpID = process.env.RPID || 'localhost';
 const rpName = process.env.RPDISPLAYNAME || 'Passkeys Sample';
-const origin = process.env.EXPECTED_ORIGIN || 'http://localhost:3000';
+const origins = (process.env.EXPECTED_ORIGIN || 'http://localhost:3000').split(',').map(s => s.trim());
 
 // ── Firestore helpers ─────────────────────────────────────────────────────
 
-async function getChallenge(sessionID) {
-  const snap = await db.collection('challenges').doc(sessionID).get();
+// Challenges are keyed by a server-generated challengeId UUID returned to the client.
+// The client echoes challengeId back in the verify request — no cookies or sessions needed.
+// This works for browsers and native apps (Android/iOS) alike.
+
+async function getChallenge(challengeId) {
+  const snap = await db.collection('challenges').doc(challengeId).get();
   return snap.exists ? snap.data() : null;
 }
 
-async function setChallenge(sessionID, data) {
-  await db.collection('challenges').doc(sessionID).set({
+async function setChallenge(challengeId, data) {
+  await db.collection('challenges').doc(challengeId).set({
     ...data,
     createdAt: FieldValue.serverTimestamp(),
   });
 }
 
-async function deleteChallenge(sessionID) {
-  await db.collection('challenges').doc(sessionID).delete();
+async function deleteChallenge(challengeId) {
+  await db.collection('challenges').doc(challengeId).delete();
 }
 
 // Deserialize a stored passkey doc (converts publicKey from Base64URL → Uint8Array)
@@ -73,7 +63,7 @@ async function getUser(username) {
 }
 
 async function createUser(username) {
-  const user = { id: crypto.randomUUID(), username, passkeys: [] };
+  const user = { id: randomUUID(), username, passkeys: [] };
   await db.collection('users').doc(username).set(user);
   return { ...user };
 }
@@ -120,6 +110,7 @@ async function findUserByCredentialID(credentialID) {
 // ── Routes ────────────────────────────────────────────────────────────────
 
 // Generate registration options
+// Returns WebAuthn options + a `challengeId` the client must echo back in verify-registration.
 app.post('/api/generate-registration-options', async (req, res) => {
   try {
     const {
@@ -170,14 +161,15 @@ app.post('/api/generate-registration-options', async (req, res) => {
 
     const options = await generateRegistrationOptions(optionsConfig);
 
-    await setChallenge(req.sessionID, {
+    const challengeId = randomUUID();
+    await setChallenge(challengeId, {
       challenge: options.challenge,
       username,
       rpID: customRpID || rpID,
     });
 
     console.log('Registration options generated:', { username, attestationType, authenticatorSelection });
-    res.json(options);
+    res.json({ ...options, challengeId });
   } catch (error) {
     console.error('Error generating registration options:', error);
     res.status(500).json({ error: error.message });
@@ -185,11 +177,16 @@ app.post('/api/generate-registration-options', async (req, res) => {
 });
 
 // Verify registration
+// Expects `challengeId` (returned by generate-registration-options) in the request body.
 app.post('/api/verify-registration', async (req, res) => {
   try {
-    const { response } = req.body;
+    const { response, challengeId } = req.body;
 
-    const challengeData = await getChallenge(req.sessionID);
+    if (!challengeId) {
+      return res.status(400).json({ error: 'challengeId is required' });
+    }
+
+    const challengeData = await getChallenge(challengeId);
     if (!challengeData) {
       return res.status(400).json({ error: 'No challenge found. Please start registration again.' });
     }
@@ -199,7 +196,7 @@ app.post('/api/verify-registration', async (req, res) => {
     const verification = await verifyRegistrationResponse({
       response,
       expectedChallenge: challenge,
-      expectedOrigin: origin,
+      expectedOrigin: origins,
       expectedRPID,
     });
 
@@ -216,7 +213,7 @@ app.post('/api/verify-registration', async (req, res) => {
         createdAt: new Date().toISOString(),
       });
 
-      await deleteChallenge(req.sessionID);
+      await deleteChallenge(challengeId);
 
       console.log('Passkey registered for user:', username);
       console.log('Device type:', credentialDeviceType);
@@ -240,6 +237,7 @@ app.post('/api/verify-registration', async (req, res) => {
 });
 
 // Generate authentication options
+// Returns WebAuthn options + a `challengeId` the client must echo back in verify-authentication.
 app.post('/api/generate-authentication-options', async (req, res) => {
   try {
     const {
@@ -266,13 +264,14 @@ app.post('/api/generate-authentication-options', async (req, res) => {
       timeout: parseInt(timeout, 10),
     });
 
-    await setChallenge(req.sessionID, {
+    const challengeId = randomUUID();
+    await setChallenge(challengeId, {
       challenge: options.challenge,
       username: username || null,
     });
 
     console.log('Authentication options generated:', { username: username || 'discoverable' });
-    res.json(options);
+    res.json({ ...options, challengeId });
   } catch (error) {
     console.error('Error generating authentication options:', error);
     res.status(500).json({ error: error.message });
@@ -280,11 +279,16 @@ app.post('/api/generate-authentication-options', async (req, res) => {
 });
 
 // Verify authentication
+// Expects `challengeId` (returned by generate-authentication-options) in the request body.
 app.post('/api/verify-authentication', async (req, res) => {
   try {
-    const { response } = req.body;
+    const { response, challengeId } = req.body;
 
-    const challengeData = await getChallenge(req.sessionID);
+    if (!challengeId) {
+      return res.status(400).json({ error: 'challengeId is required' });
+    }
+
+    const challengeData = await getChallenge(challengeId);
     if (!challengeData) {
       return res.status(400).json({ error: 'No challenge found. Please start authentication again.' });
     }
@@ -300,7 +304,7 @@ app.post('/api/verify-authentication', async (req, res) => {
     const verification = await verifyAuthenticationResponse({
       response,
       expectedChallenge: challenge,
-      expectedOrigin: origin,
+      expectedOrigin: origins,
       expectedRPID: rpID,
       credential: {
         id: authenticator.id,
@@ -317,7 +321,7 @@ app.post('/api/verify-authentication', async (req, res) => {
         verification.authenticationInfo.newCounter
       );
 
-      await deleteChallenge(req.sessionID);
+      await deleteChallenge(challengeId);
 
       console.log('User authenticated:', foundUser.username);
       res.json({ verified: true, username: foundUser.username });

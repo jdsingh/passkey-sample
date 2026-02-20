@@ -1,0 +1,11 @@
+[{
+  "relation": [
+    "delegate_permission/common.handle_all_urls",
+    "delegate_permission/common.get_login_creds"
+  ],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "me.jagdeep.passkeysample",
+    "sha256_cert_fingerprints": ["9F:22:12:14:55:92:AD:AA:B5:16:CD:CE:B6:31:90:38:AD:35:34:11:B1:54:0C:8D:69:17:11:51:A1:D9:42:6C"]
+  }
+}]
