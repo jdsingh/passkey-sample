@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/mainFragment">
+
+    <fragment
+        android:id="@+id/mainFragment"
+        android:name="me.jagdeep.passkeysample.MainFragment"
+        android:label="Passkey Sample">
+        <action
+            android:id="@+id/action_main_to_signIn"
+            app:destination="@id/signInFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/signInFragment"
+        android:name="me.jagdeep.passkeysample.SignInFragment"
+        android:label="Sign In">
+        <action
+            android:id="@+id/action_signIn_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/mainFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="me.jagdeep.passkeysample.HomeFragment"
+        android:label="Welcome">
+        <argument
+            android:name="username"
+            app:argType="string"
+            android:defaultValue="" />
+    </fragment>
+
+</navigation>
