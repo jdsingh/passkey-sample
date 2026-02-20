@@ -25,6 +25,9 @@ class MainFragment : Fragment() {
         binding.btnSignIn.setOnClickListener {
             findNavController().navigate(R.id.action_main_to_signIn)
         }
+        binding.btnAutoSignIn.setOnClickListener {
+            findNavController().navigate(R.id.action_main_to_autoSignIn)
+        }
     }
 
     override fun onDestroyView() {

@@ -11,6 +11,9 @@
         <action
             android:id="@+id/action_main_to_signIn"
             app:destination="@id/signInFragment" />
+        <action
+            android:id="@+id/action_main_to_autoSignIn"
+            app:destination="@id/autoSignInFragment" />
     </fragment>
 
     <fragment
@@ -31,6 +34,16 @@
             android:name="username"
             app:argType="string"
             android:defaultValue="" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/autoSignInFragment"
+        android:name="me.jagdeep.passkeysample.AutoSignInFragment"
+        android:label="Sign In">
+        <action
+            android:id="@+id/action_autoSignIn_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/mainFragment" />
     </fragment>
 
 </navigation>
