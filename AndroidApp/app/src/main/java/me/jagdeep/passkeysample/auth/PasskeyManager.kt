@@ -1,7 +1,11 @@
 package me.jagdeep.passkeysample.auth
 
+import android.Manifest
 import android.content.Context
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetPublicKeyCredentialOption
@@ -43,6 +47,27 @@ class PasskeyManager(private val context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "signIn: unexpected error", e)
             throw e
+        }
+    }
+
+    @RequiresPermission(Manifest.permission.CREDENTIAL_MANAGER_QUERY_CANDIDATE_CREDENTIALS)
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    suspend fun checkPasskeys(requestJson: String): Boolean {
+        Log.d(TAG, "checkPasskeys: invoking CredentialManager")
+        val getPublicKeyCredentialOption = GetPublicKeyCredentialOption(requestJson)
+
+        val request = GetCredentialRequest(listOf(getPublicKeyCredentialOption))
+
+        try {
+            val preparationHandle = credentialManager.prepareGetCredential(request)
+            Log.d(TAG, "checkPasskeys: passkeys available")
+
+            val hasValue = preparationHandle
+                .hasCredentialResults(PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL)
+            Log.d(TAG, "checkPasskeys: hasValue=$hasValue")
+            return hasValue
+        } catch (e: GetCredentialException) {
+            return false
         }
     }
 }

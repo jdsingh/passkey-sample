@@ -2,7 +2,6 @@ package me.jagdeep.passkeysample.auth
 
 import android.content.Context
 import android.os.Build
-import android.util.Base64
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.credentials.Credential
@@ -48,36 +47,11 @@ class AuthRepository(private val context: Context) {
             val (requestOptionsJson, challengeId) = generateOptions(username).getOrThrow()
             Log.d(TAG, "signIn: invoking PasskeyManager with challengeId=$challengeId")
             val authResponseJson = passkeyManager.signIn(requestOptionsJson)
-            extractUserInformation(authResponseJson)
             Log.d(TAG, "signIn: auth response received, proceeding to verify")
             verifyResponse(authResponseJson, challengeId)
         } catch (e: Exception) {
             Log.e(TAG, "signIn: flow failed", e)
             Result.failure(e)
-        }
-    }
-
-    private fun extractUserInformation(authResponseJson: String) {
-        val authResponse = json.parseToJsonElement(authResponseJson).jsonObject
-        val userHandleB64 = authResponse["response"]
-            ?.jsonObject?.get("userHandle")
-            ?.jsonPrimitive?.content
-
-        if (userHandleB64 == null) {
-            Log.w(TAG, "extractUserInformation: no userHandle in authenticator response")
-            return
-        }
-
-        Log.d(TAG, "extractUserInformation: userHandle (Base64URL) = $userHandleB64")
-        try {
-            val decoded = Base64.decode(userHandleB64, Base64.URL_SAFE or Base64.NO_PADDING)
-            val hex = decoded.joinToString("") { "%02x".format(it) }
-            Log.d(TAG, "extractUserInformation: userHandle decoded ${decoded.size} bytes, hex = $hex")
-            // Attempt UTF-8 interpretation — readable if the server stored a UUID/username string
-            val asUtf8 = String(decoded, Charsets.UTF_8)
-            Log.d(TAG, "extractUserInformation: userHandle as UTF-8 = \"$asUtf8\"")
-        } catch (e: Exception) {
-            Log.e(TAG, "extractUserInformation: failed to Base64-decode userHandle", e)
         }
     }
 
@@ -90,6 +64,7 @@ class AuthRepository(private val context: Context) {
                     Log.d(TAG, "verifyCredential: extracting authenticationResponseJson")
                     credential.authenticationResponseJson
                 }
+
                 else -> {
                     Log.e(TAG, "verifyCredential: unsupported credential type '${credential.type}'")
                     throw Exception("Unsupported credential type: ${credential.type}")
@@ -102,19 +77,28 @@ class AuthRepository(private val context: Context) {
         }
     }
 
-    private suspend fun verifyResponse(authResponseJson: String, challengeId: String): Result<String> {
+    private suspend fun verifyResponse(
+        authResponseJson: String,
+        challengeId: String
+    ): Result<String> {
         Log.d(TAG, "verifyResponse: sending to server, challengeId=$challengeId")
         return try {
             val verifyString = ApiClient.verifyAuthentication(authResponseJson, challengeId)
             val verifyResult = json.parseToJsonElement(verifyString).jsonObject
             val verified = verifyResult["verified"]?.jsonPrimitive?.content?.toBoolean() ?: false
             if (!verified) {
-                Log.e(TAG, "verifyResponse: server returned verified=false. Response: $verifyString")
+                Log.e(
+                    TAG,
+                    "verifyResponse: server returned verified=false. Response: $verifyString"
+                )
                 return Result.failure(Exception("Authentication failed"))
             }
             val username = verifyResult["username"]?.jsonPrimitive?.content
             if (username == null) {
-                Log.e(TAG, "verifyResponse: server response missing 'username'. Response: $verifyString")
+                Log.e(
+                    TAG,
+                    "verifyResponse: server response missing 'username'. Response: $verifyString"
+                )
                 throw Exception("No username in verification response")
             }
             Log.d(TAG, "verifyResponse: authentication successful, username=$username")
