@@ -2,6 +2,7 @@ package me.jagdeep.passkeysample.auth
 
 import android.content.Context
 import android.os.Build
+import android.util.Base64
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.credentials.Credential
@@ -16,6 +17,11 @@ class AuthRepository(private val context: Context) {
     private val TAG = "AuthRepository"
     private val passkeyManager = PasskeyManager(context)
     private val json = Json { ignoreUnknownKeys = true }
+    private val prettyJson = Json { prettyPrint = true; ignoreUnknownKeys = true }
+
+    private fun String.toPrettyJson(): String = try {
+        prettyJson.encodeToString(prettyJson.parseToJsonElement(this))
+    } catch (_: Exception) { this }
 
     // Fetches a challenge from the server. Returns (requestOptionsJson, challengeId).
     // The requestOptionsJson can be passed directly to GetPublicKeyCredentialOption.
@@ -30,8 +36,9 @@ class AuthRepository(private val context: Context) {
                 Log.e(TAG, "generateOptions: server response missing 'challengeId'")
                 return Result.failure(Exception("No challengeId in server response"))
             }
-            Log.d(TAG, "generateOptions: received challengeId=$challengeId")
+            Log.d(TAG, "generateOptions: challengeId=$challengeId")
             val requestOptions = JsonObject(optionsElement.filterKeys { it != "challengeId" })
+            Log.d(TAG, "generateOptions: options passed to CredentialManager:\n${requestOptions.toString().toPrettyJson()}")
             passkeyManager.checkPasskeys(requestOptions.toString())
             Result.success(Pair(requestOptions.toString(), challengeId))
         } catch (e: Exception) {
@@ -45,7 +52,6 @@ class AuthRepository(private val context: Context) {
         Log.d(TAG, "signIn: starting full flow, username=${username ?: "<none>"}")
         return try {
             val (requestOptionsJson, challengeId) = generateOptions(username).getOrThrow()
-            Log.d(TAG, "signIn: invoking PasskeyManager with challengeId=$challengeId")
             val authResponseJson = passkeyManager.signIn(requestOptionsJson)
             Log.d(TAG, "signIn: auth response received, proceeding to verify")
             verifyResponse(authResponseJson, challengeId)
@@ -61,10 +67,9 @@ class AuthRepository(private val context: Context) {
         return try {
             val authResponseJson = when (credential) {
                 is PublicKeyCredential -> {
-                    Log.d(TAG, "verifyCredential: extracting authenticationResponseJson")
+                    Log.d(TAG, "verifyCredential: authenticationResponseJson:\n${credential.authenticationResponseJson.toPrettyJson()}")
                     credential.authenticationResponseJson
                 }
-
                 else -> {
                     Log.e(TAG, "verifyCredential: unsupported credential type '${credential.type}'")
                     throw Exception("Unsupported credential type: ${credential.type}")
@@ -77,28 +82,19 @@ class AuthRepository(private val context: Context) {
         }
     }
 
-    private suspend fun verifyResponse(
-        authResponseJson: String,
-        challengeId: String
-    ): Result<String> {
+    private suspend fun verifyResponse(authResponseJson: String, challengeId: String): Result<String> {
         Log.d(TAG, "verifyResponse: sending to server, challengeId=$challengeId")
         return try {
             val verifyString = ApiClient.verifyAuthentication(authResponseJson, challengeId)
             val verifyResult = json.parseToJsonElement(verifyString).jsonObject
             val verified = verifyResult["verified"]?.jsonPrimitive?.content?.toBoolean() ?: false
             if (!verified) {
-                Log.e(
-                    TAG,
-                    "verifyResponse: server returned verified=false. Response: $verifyString"
-                )
+                Log.e(TAG, "verifyResponse: server returned verified=false:\n${verifyString.toPrettyJson()}")
                 return Result.failure(Exception("Authentication failed"))
             }
             val username = verifyResult["username"]?.jsonPrimitive?.content
             if (username == null) {
-                Log.e(
-                    TAG,
-                    "verifyResponse: server response missing 'username'. Response: $verifyString"
-                )
+                Log.e(TAG, "verifyResponse: server response missing 'username':\n${verifyString.toPrettyJson()}")
                 throw Exception("No username in verification response")
             }
             Log.d(TAG, "verifyResponse: authentication successful, username=$username")
