@@ -1,7 +1,10 @@
 package me.jagdeep.passkeysample.auth
 
 import android.content.Context
+import android.os.Build
+import android.util.Base64
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.credentials.Credential
 import androidx.credentials.PublicKeyCredential
 import kotlinx.serialization.json.Json
@@ -17,6 +20,7 @@ class AuthRepository(private val context: Context) {
 
     // Fetches a challenge from the server. Returns (requestOptionsJson, challengeId).
     // The requestOptionsJson can be passed directly to GetPublicKeyCredentialOption.
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     suspend fun generateOptions(username: String?): Result<Pair<String, String>> {
         Log.d(TAG, "generateOptions: username=${username ?: "<none>"}")
         return try {
@@ -29,6 +33,7 @@ class AuthRepository(private val context: Context) {
             }
             Log.d(TAG, "generateOptions: received challengeId=$challengeId")
             val requestOptions = JsonObject(optionsElement.filterKeys { it != "challengeId" })
+            passkeyManager.checkPasskeys(requestOptions.toString())
             Result.success(Pair(requestOptions.toString(), challengeId))
         } catch (e: Exception) {
             Log.e(TAG, "generateOptions: failed", e)
@@ -43,11 +48,36 @@ class AuthRepository(private val context: Context) {
             val (requestOptionsJson, challengeId) = generateOptions(username).getOrThrow()
             Log.d(TAG, "signIn: invoking PasskeyManager with challengeId=$challengeId")
             val authResponseJson = passkeyManager.signIn(requestOptionsJson)
+            extractUserInformation(authResponseJson)
             Log.d(TAG, "signIn: auth response received, proceeding to verify")
             verifyResponse(authResponseJson, challengeId)
         } catch (e: Exception) {
             Log.e(TAG, "signIn: flow failed", e)
             Result.failure(e)
+        }
+    }
+
+    private fun extractUserInformation(authResponseJson: String) {
+        val authResponse = json.parseToJsonElement(authResponseJson).jsonObject
+        val userHandleB64 = authResponse["response"]
+            ?.jsonObject?.get("userHandle")
+            ?.jsonPrimitive?.content
+
+        if (userHandleB64 == null) {
+            Log.w(TAG, "extractUserInformation: no userHandle in authenticator response")
+            return
+        }
+
+        Log.d(TAG, "extractUserInformation: userHandle (Base64URL) = $userHandleB64")
+        try {
+            val decoded = Base64.decode(userHandleB64, Base64.URL_SAFE or Base64.NO_PADDING)
+            val hex = decoded.joinToString("") { "%02x".format(it) }
+            Log.d(TAG, "extractUserInformation: userHandle decoded ${decoded.size} bytes, hex = $hex")
+            // Attempt UTF-8 interpretation — readable if the server stored a UUID/username string
+            val asUtf8 = String(decoded, Charsets.UTF_8)
+            Log.d(TAG, "extractUserInformation: userHandle as UTF-8 = \"$asUtf8\"")
+        } catch (e: Exception) {
+            Log.e(TAG, "extractUserInformation: failed to Base64-decode userHandle", e)
         }
     }
 
