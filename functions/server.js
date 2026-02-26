@@ -25,6 +25,22 @@ const rpID = process.env.RPID || 'localhost';
 const rpName = process.env.RPDISPLAYNAME || 'Passkeys Sample';
 const origins = (process.env.EXPECTED_ORIGIN || 'http://localhost:3000').split(',').map(s => s.trim());
 
+// CORS — allow the same origins that are trusted for WebAuthn verification.
+// android:apk-key-hash entries in EXPECTED_ORIGIN are not HTTP origins, so filter them out.
+const corsOrigins = origins.filter(o => o.startsWith('http'));
+app.use((req, res, next) => {
+  const requestOrigin = req.headers.origin;
+  if (requestOrigin && corsOrigins.includes(requestOrigin)) {
+    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 // ── Firestore helpers ─────────────────────────────────────────────────────
 
 // Challenges are keyed by a server-generated challengeId UUID returned to the client.
