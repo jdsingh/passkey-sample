@@ -11,7 +11,7 @@ import java.net.URL
 
 object ApiClient {
     private const val TAG = "ApiClient"
-    private const val BASE_URL = "https://passkey-sample-e9304.web.app"
+    private const val BASE_URL = "https://passkey.jagdeep.me"
     private val prettyJson = Json { prettyPrint = true }
 
     private fun String.toPrettyJson(): String = try {
