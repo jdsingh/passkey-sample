@@ -45,7 +45,7 @@
   <script>
     async function loadUsers() {
       try {
-        const response = await fetch('/api/users');
+        const response = await fetch('https://passkey-sample-e9304.web.app/api/users');
         const users = await response.json();
         const usersList = document.getElementById('users-list');
         

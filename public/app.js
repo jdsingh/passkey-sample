@@ -1,6 +1,8 @@
 // SimpleWebAuthn browser methods
 const { startRegistration, startAuthentication, browserSupportsWebAuthn } = SimpleWebAuthnBrowser;
 
+const API_BASE = 'https://passkey-sample-e9304.web.app';
+
 // Check WebAuthn support
 if (!browserSupportsWebAuthn()) {
   alert('Your browser does not support WebAuthn. Please use a modern browser.');
@@ -62,7 +64,7 @@ if (signupForm) {
       }
 
       // Step 1: Get registration options from server
-      const optionsResponse = await fetch('/api/generate-registration-options', {
+      const optionsResponse = await fetch(`${API_BASE}/api/generate-registration-options`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -92,7 +94,7 @@ if (signupForm) {
       showResults('registration-response', registrationResponse);
 
       // Step 3: Send response to server for verification
-      const verificationResponse = await fetch('/api/verify-registration', {
+      const verificationResponse = await fetch(`${API_BASE}/api/verify-registration`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ response: registrationResponse, challengeId }),
@@ -147,7 +149,7 @@ if (loginForm) {
       };
 
       // Step 1: Get authentication options from server
-      const optionsResponse = await fetch('/api/generate-authentication-options', {
+      const optionsResponse = await fetch(`${API_BASE}/api/generate-authentication-options`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -175,7 +177,7 @@ if (loginForm) {
       showResults('auth-response', authResponse);
 
       // Step 3: Send response to server for verification
-      const verificationResponse = await fetch('/api/verify-authentication', {
+      const verificationResponse = await fetch(`${API_BASE}/api/verify-authentication`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ response: authResponse, challengeId }),
