@@ -1,7 +1,9 @@
 package me.jagdeep.passkeysample.auth
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.credentials.Credential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
@@ -65,6 +67,30 @@ class AuthRepository(private val context: Context) {
             verifyResponse(authResponseJson, challengeId)
         } catch (e: Exception) {
             Log.e(TAG, "signIn: flow failed", e)
+            Result.failure(e)
+        }
+    }
+
+    // Returns true if the device has passkeys stored for this app. API 34+ only.
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    suspend fun checkPasskeys(requestOptionsJson: String): Boolean {
+        Log.d(TAG, "checkPasskeys: checking passkey availability")
+        return passkeyManager.checkPasskeys(requestOptionsJson)
+    }
+
+    // Runs sign-in using pre-fetched options, avoiding a second generateOptions() call.
+    suspend fun signInWithOptions(
+        requestOptionsJson: String,
+        challengeId: String,
+        getCredential: suspend (GetCredentialRequest) -> GetCredentialResponse
+    ): Result<String> {
+        Log.d(TAG, "signInWithOptions: using pre-fetched options, challengeId=$challengeId")
+        return try {
+            val authResponseJson = passkeyManager.signIn(requestOptionsJson, getCredential)
+            Log.d(TAG, "signInWithOptions: auth response received, proceeding to verify")
+            verifyResponse(authResponseJson, challengeId)
+        } catch (e: Exception) {
+            Log.e(TAG, "signInWithOptions: flow failed", e)
             Result.failure(e)
         }
     }

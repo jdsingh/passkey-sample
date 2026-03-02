@@ -37,6 +37,30 @@
             android:lineSpacingMultiplier="1.3"
             android:layout_marginBottom="28dp" />
 
+        <!-- Dynamic info message: shown when passkeys are absent or detection is unavailable -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:visibility="gone"
+            app:cardElevation="0dp"
+            app:cardCornerRadius="8dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            xmlns:app="http://schemas.android.com/apk/res-auto">
+
+            <TextView
+                android:id="@+id/tvInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="12dp"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:lineSpacingMultiplier="1.3" />
+
+        </com.google.android.material.card.MaterialCardView>
+
         <!--
             Both views start GONE. The Checking state shows only the ProgressBar.
             The NoPasskeys state reveals these two.

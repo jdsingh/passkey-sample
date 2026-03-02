@@ -1,6 +1,7 @@
 package me.jagdeep.passkeysample
 
 import android.app.Application
+import android.os.Build
 import android.util.Log
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
@@ -28,23 +29,55 @@ class AutoSignInViewModel(application: Application) : AndroidViewModel(applicati
     private val _uiState = MutableStateFlow<AutoSignInUiState>(AutoSignInUiState.Checking)
     val uiState: StateFlow<AutoSignInUiState> = _uiState
 
-    // Called immediately when the Fragment view is ready. Invokes CredentialManager
-    // proactively — if passkeys are available the system bottom-sheet appears; if not,
-    // we transition to NoPasskeys so the manual form is revealed.
+    // Shown in the UI to explain detection limitations or absence of passkeys.
+    private val _infoMessage = MutableStateFlow<String?>(null)
+    val infoMessage: StateFlow<String?> = _infoMessage
+
+    // Called immediately when the Fragment view is ready.
+    // On API 34+: silently checks for passkeys first; only prompts if found.
+    // On API < 34: cannot check silently, so shows an info message and prompts directly.
     fun queryPasskeys(getCredential: suspend (GetCredentialRequest) -> GetCredentialResponse) {
-        Log.d(TAG, "queryPasskeys: proactively invoking CredentialManager")
+        Log.d(TAG, "queryPasskeys: starting")
         viewModelScope.launch {
             _uiState.value = AutoSignInUiState.Checking
-            val result = repository.signIn(null, getCredential)
+
+            val optionsResult = repository.generateOptions(null)
+            if (optionsResult.isFailure) {
+                Log.e(TAG, "queryPasskeys: failed to generate options", optionsResult.exceptionOrNull())
+                _uiState.value = AutoSignInUiState.Error(
+                    optionsResult.exceptionOrNull()?.message ?: "Failed to connect to server"
+                )
+                return@launch
+            }
+            val (requestOptionsJson, challengeId) = optionsResult.getOrThrow()
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                // API 34+: use prepareGetCredential to silently check before showing the picker
+                val hasPasskeys = repository.checkPasskeys(requestOptionsJson)
+                if (!hasPasskeys) {
+                    Log.w(TAG, "queryPasskeys: no passkeys found on this device")
+                    _infoMessage.value = "No passkeys detected on this device"
+                    _uiState.value = AutoSignInUiState.NoPasskeys
+                    return@launch
+                }
+                Log.d(TAG, "queryPasskeys: passkeys detected, proceeding with auto-prompt")
+            } else {
+                // API < 34: prepareGetCredential unavailable, prompt directly
+                Log.d(TAG, "queryPasskeys: API < 34, passkey detection unavailable — prompting directly")
+                _infoMessage.value = "Passkey detection is not available on Android 13 and below"
+            }
+
+            val result = repository.signInWithOptions(requestOptionsJson, challengeId, getCredential)
             result.fold(
                 onSuccess = { username ->
-                    Log.d(TAG, "queryPasskeys: passkey sign-in succeeded, username=$username")
+                    Log.d(TAG, "queryPasskeys: sign-in succeeded, username=$username")
+                    _infoMessage.value = null
                     _uiState.value = AutoSignInUiState.Success(username)
                 },
                 onFailure = { e ->
                     when (e) {
                         is NoCredentialException -> {
-                            Log.w(TAG, "queryPasskeys: no passkeys registered for this app — showing manual form")
+                            Log.w(TAG, "queryPasskeys: no passkeys registered — showing manual form")
                             _uiState.value = AutoSignInUiState.NoPasskeys
                         }
                         is GetCredentialCancellationException -> {

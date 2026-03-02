@@ -47,6 +47,16 @@ class AutoSignInFragment : Fragment() {
             viewModel.signIn(binding.etUsername.text?.toString()) { getCredential(requireActivity(), it) }
         }
 
+        // Show/hide the info card independently of the main state machine.
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.infoMessage.collect { message ->
+                    binding.cardInfo.isVisible = message != null
+                    binding.tvInfo.text = message ?: ""
+                }
+            }
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
