@@ -1,5 +1,6 @@
 package me.jagdeep.passkeysample
 
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -36,12 +37,15 @@ class SignInFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // As soon as the server-prefetched request arrives, attach it to the username field.
-        // The system will then show the passkey picker whenever the field is focused.
-        viewLifecycleOwner.lifecycleScope.launch {
-            val request = viewModel.pendingRequest.filterNotNull().first()
-            binding.etUsername.pendingGetCredentialRequest = PendingGetCredentialRequest(request) { response ->
-                viewModel.handleAutofillCredential(response.credential)
+        // Attach the server-prefetched request to the username field so the system shows
+        // the passkey picker when the field is focused. Only available on API 34+;
+        // on older versions the button flow handles sign-in without autofill hints.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val request = viewModel.pendingRequest.filterNotNull().first()
+                binding.etUsername.pendingGetCredentialRequest = PendingGetCredentialRequest(request) { response ->
+                    viewModel.handleAutofillCredential(response.credential)
+                }
             }
         }
 

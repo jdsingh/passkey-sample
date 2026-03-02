@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Build
 import android.util.Base64
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.credentials.Credential
 import androidx.credentials.PublicKeyCredential
 import kotlinx.serialization.json.Json
@@ -25,7 +24,6 @@ class AuthRepository(private val context: Context) {
 
     // Fetches a challenge from the server. Returns (requestOptionsJson, challengeId).
     // The requestOptionsJson can be passed directly to GetPublicKeyCredentialOption.
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     suspend fun generateOptions(username: String?): Result<Pair<String, String>> {
         Log.d(TAG, "generateOptions: username=${username ?: "<none>"}")
         return try {
@@ -39,7 +37,11 @@ class AuthRepository(private val context: Context) {
             Log.d(TAG, "generateOptions: challengeId=$challengeId")
             val requestOptions = JsonObject(optionsElement.filterKeys { it != "challengeId" })
             Log.d(TAG, "generateOptions: options passed to CredentialManager:\n${requestOptions.toString().toPrettyJson()}")
-            passkeyManager.checkPasskeys(requestOptions.toString())
+            // prepareGetCredential pre-warms the CredentialManager for faster picker display.
+            // Only available on API 34+; silently skipped on older versions.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                passkeyManager.checkPasskeys(requestOptions.toString())
+            }
             Result.success(Pair(requestOptions.toString(), challengeId))
         } catch (e: Exception) {
             Log.e(TAG, "generateOptions: failed", e)
@@ -52,8 +54,9 @@ class AuthRepository(private val context: Context) {
         Log.d(TAG, "signIn: starting full flow, username=${username ?: "<none>"}")
         return try {
             val (requestOptionsJson, challengeId) = generateOptions(username).getOrThrow()
+            Log.d(TAG, "signIn: options received, invoking CredentialManager")
             val authResponseJson = passkeyManager.signIn(requestOptionsJson)
-            Log.d(TAG, "signIn: auth response received, proceeding to verify")
+            Log.d(TAG, "signIn: auth response received, proceeding to verify: $authResponseJson")
             verifyResponse(authResponseJson, challengeId)
         } catch (e: Exception) {
             Log.e(TAG, "signIn: flow failed", e)
