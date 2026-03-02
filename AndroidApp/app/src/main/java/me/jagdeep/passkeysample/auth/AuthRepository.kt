@@ -1,8 +1,6 @@
 package me.jagdeep.passkeysample.auth
 
 import android.content.Context
-import android.os.Build
-import android.util.Base64
 import android.util.Log
 import androidx.credentials.Credential
 import androidx.credentials.GetCredentialRequest
@@ -62,7 +60,7 @@ class AuthRepository(private val context: Context) {
         return try {
             val (requestOptionsJson, challengeId) = generateOptions(username).getOrThrow()
             Log.d(TAG, "signIn: options received, invoking CredentialManager via lambda")
-            val authResponseJson = getCredential(requestOptionsJson)
+            val authResponseJson = passkeyManager.signIn(requestOptionsJson, getCredential)
             Log.d(TAG, "signIn: auth response received, proceeding to verify: $authResponseJson")
             verifyResponse(authResponseJson, challengeId)
         } catch (e: Exception) {
