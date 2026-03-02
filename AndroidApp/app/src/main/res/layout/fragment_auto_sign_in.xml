@@ -10,6 +10,33 @@
         android:orientation="vertical"
         android:padding="24dp">
 
+        <!-- Description header -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="⚡"
+            android:textSize="48sp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Sign In"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Checking your device for saved passkeys. If one is found, a picker lets you choose your account. If none are found, enter your username to sign in manually."
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?android:attr/textColorSecondary"
+            android:lineSpacingMultiplier="1.3"
+            android:layout_marginBottom="28dp" />
+
         <!--
             Both views start GONE. The Checking state shows only the ProgressBar.
             The NoPasskeys state reveals these two.

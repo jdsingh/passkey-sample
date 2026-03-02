@@ -31,8 +31,8 @@ class MainActivity : AppCompatActivity() {
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, windowInsets ->
             val bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            // Toolbar absorbs the status bar height so content sits below it
-            binding.toolbar.updatePadding(top = bars.top)
+            // AppBarLayout absorbs the status bar height so content sits below it
+            binding.appBarLayout.updatePadding(top = bars.top)
             // Fragment container is padded away from the navigation bar
             binding.navHostFragment.updatePadding(bottom = bars.bottom)
             WindowInsetsCompat.CONSUMED

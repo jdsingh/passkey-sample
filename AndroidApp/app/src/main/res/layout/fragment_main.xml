@@ -1,23 +1,159 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:layout_height="match_parent">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnSignIn"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Sign In with Passkey" />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnAutoSignIn"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="Sign In (Auto-detect)" />
+        <!-- Hero -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="🔑"
+            android:textSize="56sp"
+            android:layout_marginBottom="12dp" />
 
-</LinearLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Passkey Sign In"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="No passwords. Sign in using a passkey saved on your device."
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?android:attr/textColorSecondary"
+            android:lineSpacingMultiplier="1.3"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Auto-detect card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardElevation="0dp"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⚡"
+                        android:textSize="22sp"
+                        android:layout_marginEnd="10dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Auto-detect"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Queries your device for passkeys the moment this screen opens. If a passkey is found, the system picker appears automatically — no username required. If no passkeys are stored, a username field appears so you can sign in manually."
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:lineSpacingMultiplier="1.3"
+                    android:layout_marginBottom="16dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAutoSignIn"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Sign In (Auto-detect)" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Manual sign-in card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardElevation="0dp"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔐"
+                        android:textSize="22sp"
+                        android:layout_marginEnd="10dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Enter Username"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Enter your username to look up the passkey linked to your account. Useful when you want to select a specific account, or when auto-detect does not trigger. Tapping the username field may also surface an inline passkey suggestion."
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:lineSpacingMultiplier="1.3"
+                    android:layout_marginBottom="16dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSignIn"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Sign In with Passkey" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>
