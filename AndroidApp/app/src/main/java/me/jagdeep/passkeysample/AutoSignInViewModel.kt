@@ -2,6 +2,8 @@ package me.jagdeep.passkeysample
 
 import android.app.Application
 import android.util.Log
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.AndroidViewModel
@@ -29,7 +31,7 @@ class AutoSignInViewModel(application: Application) : AndroidViewModel(applicati
     // Called immediately when the Fragment view is ready. Invokes CredentialManager
     // proactively — if passkeys are available the system bottom-sheet appears; if not,
     // we transition to NoPasskeys so the manual form is revealed.
-    fun queryPasskeys(getCredential: suspend (String) -> String) {
+    fun queryPasskeys(getCredential: suspend (GetCredentialRequest) -> GetCredentialResponse) {
         Log.d(TAG, "queryPasskeys: proactively invoking CredentialManager")
         viewModelScope.launch {
             _uiState.value = AutoSignInUiState.Checking
@@ -60,7 +62,7 @@ class AutoSignInViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     // Called by the manual "Sign In with Passkey" button once the username field is visible.
-    fun signIn(username: String?, getCredential: suspend (String) -> String) {
+    fun signIn(username: String?, getCredential: suspend (GetCredentialRequest) -> GetCredentialResponse) {
         Log.d(TAG, "signIn: manual button triggered, username=${username?.takeIf { it.isNotBlank() } ?: "<none>"}")
         viewModelScope.launch {
             _uiState.value = AutoSignInUiState.Loading

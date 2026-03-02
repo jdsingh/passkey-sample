@@ -5,6 +5,8 @@ import android.os.Build
 import android.util.Base64
 import android.util.Log
 import androidx.credentials.Credential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
 import androidx.credentials.PublicKeyCredential
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -51,10 +53,10 @@ class AuthRepository(private val context: Context) {
 
     // Full flow for the Sign In button: fetches options, invokes CredentialManager, verifies.
     // getCredential: caller-supplied lambda that invokes CredentialManager with an Activity
-    // context and returns the authentication response JSON from the credential.
+    // context and returns the credential response.
     suspend fun signIn(
         username: String?,
-        getCredential: suspend (requestOptionsJson: String) -> String
+        getCredential: suspend (GetCredentialRequest) -> GetCredentialResponse
     ): Result<String> {
         Log.d(TAG, "signIn: starting full flow, username=${username ?: "<none>"}")
         return try {

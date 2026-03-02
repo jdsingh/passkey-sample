@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.credentials.Credential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
 import androidx.credentials.GetPublicKeyCredentialOption
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -82,7 +83,7 @@ class SignInViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     // Called by the Sign In button — runs the full independent flow.
-    fun signIn(username: String?, getCredential: suspend (String) -> String) {
+    fun signIn(username: String?, getCredential: suspend (GetCredentialRequest) -> GetCredentialResponse) {
         Log.d(TAG, "signIn: button triggered, username=${username?.takeIf { it.isNotBlank() } ?: "<none>"}")
         viewModelScope.launch {
             _uiState.value = SignInUiState.Loading
