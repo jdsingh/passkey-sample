@@ -82,11 +82,11 @@ class SignInViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     // Called by the Sign In button — runs the full independent flow.
-    fun signIn(username: String?) {
+    fun signIn(username: String?, getCredential: suspend (String) -> String) {
         Log.d(TAG, "signIn: button triggered, username=${username?.takeIf { it.isNotBlank() } ?: "<none>"}")
         viewModelScope.launch {
             _uiState.value = SignInUiState.Loading
-            val result = repository.signIn(username?.takeIf { it.isNotBlank() })
+            val result = repository.signIn(username?.takeIf { it.isNotBlank() }, getCredential)
             result.fold(
                 onSuccess = { name ->
                     Log.d(TAG, "signIn: success, username=$name")

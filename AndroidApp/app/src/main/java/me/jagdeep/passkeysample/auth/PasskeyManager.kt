@@ -24,13 +24,13 @@ class PasskeyManager(private val context: Context) {
         prettyJson.encodeToString(prettyJson.parseToJsonElement(this))
     } catch (_: Exception) { this }
 
-    suspend fun signIn(requestJson: String): String {
+    suspend fun signIn(requestJson: String, activityContext: Context): String {
         Log.d(TAG, "signIn → CredentialManager.getCredential request:\n${requestJson.toPrettyJson()}")
         val getPublicKeyCredentialOption = GetPublicKeyCredentialOption(requestJson)
         val request = GetCredentialRequest(listOf(getPublicKeyCredentialOption))
 
         return try {
-            val result = credentialManager.getCredential(context, request)
+            val result = credentialManager.getCredential(activityContext, request)  // must be Activity context
             val credential = result.credential
             Log.d(TAG, "signIn ← CredentialManager.getCredential response: type=${credential.type}")
 

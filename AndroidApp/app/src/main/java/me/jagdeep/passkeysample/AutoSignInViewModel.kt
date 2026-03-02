@@ -29,11 +29,11 @@ class AutoSignInViewModel(application: Application) : AndroidViewModel(applicati
     // Called immediately when the Fragment view is ready. Invokes CredentialManager
     // proactively — if passkeys are available the system bottom-sheet appears; if not,
     // we transition to NoPasskeys so the manual form is revealed.
-    fun queryPasskeys() {
+    fun queryPasskeys(getCredential: suspend (String) -> String) {
         Log.d(TAG, "queryPasskeys: proactively invoking CredentialManager")
         viewModelScope.launch {
             _uiState.value = AutoSignInUiState.Checking
-            val result = repository.signIn(null)
+            val result = repository.signIn(null, getCredential)
             result.fold(
                 onSuccess = { username ->
                     Log.d(TAG, "queryPasskeys: passkey sign-in succeeded, username=$username")
@@ -60,11 +60,11 @@ class AutoSignInViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     // Called by the manual "Sign In with Passkey" button once the username field is visible.
-    fun signIn(username: String?) {
+    fun signIn(username: String?, getCredential: suspend (String) -> String) {
         Log.d(TAG, "signIn: manual button triggered, username=${username?.takeIf { it.isNotBlank() } ?: "<none>"}")
         viewModelScope.launch {
             _uiState.value = AutoSignInUiState.Loading
-            val result = repository.signIn(username?.takeIf { it.isNotBlank() })
+            val result = repository.signIn(username?.takeIf { it.isNotBlank() }, getCredential)
             result.fold(
                 onSuccess = { name ->
                     Log.d(TAG, "signIn: success, username=$name")

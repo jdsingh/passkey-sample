@@ -18,6 +18,7 @@ import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import me.jagdeep.passkeysample.auth.PasskeyManager
 import me.jagdeep.passkeysample.databinding.FragmentSignInBinding
 
 class SignInFragment : Fragment() {
@@ -26,6 +27,7 @@ class SignInFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: SignInViewModel by viewModels()
+    private val passkeyManager by lazy { PasskeyManager(requireContext()) }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -55,8 +57,12 @@ class SignInFragment : Fragment() {
             override fun afterTextChanged(s: android.text.Editable?) { viewModel.resetError() }
         })
 
+        val getCredential: suspend (String) -> String = { requestJson ->
+            passkeyManager.signIn(requestJson, requireActivity())
+        }
+
         binding.btnSignIn.setOnClickListener {
-            viewModel.signIn(binding.etUsername.text?.toString())
+            viewModel.signIn(binding.etUsername.text?.toString(), getCredential)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {

@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.launch
+import me.jagdeep.passkeysample.auth.PasskeyManager
 import me.jagdeep.passkeysample.databinding.FragmentAutoSignInBinding
 
 class AutoSignInFragment : Fragment() {
@@ -21,6 +22,7 @@ class AutoSignInFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: AutoSignInViewModel by viewModels()
+    private val passkeyManager by lazy { PasskeyManager(requireContext()) }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -32,9 +34,15 @@ class AutoSignInFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Lambda that calls CredentialManager with an Activity context (required for the
+        // system picker UI). Defined here so requireActivity() is always valid.
+        val getCredential: suspend (String) -> String = { requestJson ->
+            passkeyManager.signIn(requestJson, requireActivity())
+        }
+
         // Immediately query CredentialManager. If passkeys exist the system bottom-sheet
         // appears; if not, state transitions to NoPasskeys and the form is revealed.
-        viewModel.queryPasskeys()
+        viewModel.queryPasskeys(getCredential)
 
         binding.etUsername.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -43,7 +51,7 @@ class AutoSignInFragment : Fragment() {
         })
 
         binding.btnSignIn.setOnClickListener {
-            viewModel.signIn(binding.etUsername.text?.toString())
+            viewModel.signIn(binding.etUsername.text?.toString(), getCredential)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {

@@ -39,9 +39,9 @@ class AuthRepository(private val context: Context) {
             Log.d(TAG, "generateOptions: options passed to CredentialManager:\n${requestOptions.toString().toPrettyJson()}")
             // prepareGetCredential pre-warms the CredentialManager for faster picker display.
             // Only available on API 34+; silently skipped on older versions.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                passkeyManager.checkPasskeys(requestOptions.toString())
-            }
+            // if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            //    passkeyManager.checkPasskeys(requestOptions.toString())
+            // }
             Result.success(Pair(requestOptions.toString(), challengeId))
         } catch (e: Exception) {
             Log.e(TAG, "generateOptions: failed", e)
@@ -50,12 +50,17 @@ class AuthRepository(private val context: Context) {
     }
 
     // Full flow for the Sign In button: fetches options, invokes CredentialManager, verifies.
-    suspend fun signIn(username: String?): Result<String> {
+    // getCredential: caller-supplied lambda that invokes CredentialManager with an Activity
+    // context and returns the authentication response JSON from the credential.
+    suspend fun signIn(
+        username: String?,
+        getCredential: suspend (requestOptionsJson: String) -> String
+    ): Result<String> {
         Log.d(TAG, "signIn: starting full flow, username=${username ?: "<none>"}")
         return try {
             val (requestOptionsJson, challengeId) = generateOptions(username).getOrThrow()
-            Log.d(TAG, "signIn: options received, invoking CredentialManager")
-            val authResponseJson = passkeyManager.signIn(requestOptionsJson)
+            Log.d(TAG, "signIn: options received, invoking CredentialManager via lambda")
+            val authResponseJson = getCredential(requestOptionsJson)
             Log.d(TAG, "signIn: auth response received, proceeding to verify: $authResponseJson")
             verifyResponse(authResponseJson, challengeId)
         } catch (e: Exception) {
