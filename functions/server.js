@@ -1,5 +1,6 @@
 import express from 'express';
 import { randomUUID } from 'crypto';
+import bcrypt from 'bcryptjs';
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -217,7 +218,7 @@ app.post('/api/verify-registration', async (req, res) => {
     });
 
     if (verification.verified && verification.registrationInfo) {
-      const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
+      const { credential, credentialDeviceType, credentialBackedUp, aaguid } = verification.registrationInfo;
 
       await addPasskeyToUser(username, {
         id: credential.id,
@@ -226,6 +227,7 @@ app.post('/api/verify-registration', async (req, res) => {
         transports: response.response.transports || [],
         deviceType: credentialDeviceType,
         backedUp: credentialBackedUp,
+        aaguid: aaguid || null,
         createdAt: new Date().toISOString(),
       });
 
@@ -234,6 +236,7 @@ app.post('/api/verify-registration', async (req, res) => {
       console.log('Passkey registered for user:', username);
       console.log('Device type:', credentialDeviceType);
       console.log('Backed up:', credentialBackedUp);
+      console.log('AAGUID:', aaguid || '<none>');
 
       res.json({
         verified: true,
@@ -241,6 +244,7 @@ app.post('/api/verify-registration', async (req, res) => {
           credentialID: credential.id,
           credentialDeviceType,
           credentialBackedUp,
+          aaguid: aaguid || null,
         },
       });
     } else {
@@ -346,6 +350,66 @@ app.post('/api/verify-authentication', async (req, res) => {
     }
   } catch (error) {
     console.error('Error verifying authentication:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Password registration
+app.post('/api/password/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    const existing = await getUser(username);
+    if (existing) {
+      return res.status(409).json({ error: 'Username already taken' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    await db.collection('users').doc(username).set({
+      id: randomUUID(),
+      username,
+      passwordHash,
+      passkeys: [],
+    });
+
+    console.log('Password account created:', username);
+    res.json({ success: true, username });
+  } catch (error) {
+    console.error('Error registering password account:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Password login
+// Returns hasPasskey so the client can decide whether to offer passkey upgrade.
+app.post('/api/password/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    const user = await getUser(username);
+    if (!user || !user.passwordHash) {
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+    console.log('Password login successful:', username);
+    res.json({
+      success: true,
+      username,
+      hasPasskey: user.passkeys.length > 0,
+    });
+  } catch (error) {
+    console.error('Error during password login:', error);
     res.status(500).json({ error: error.message });
   }
 });
